@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Plus } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Plus, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { deleteCategory } from '@/actions/categories'
-import type { Category } from '@/types'
+import { createBudget, updateBudget, deleteBudget } from '@/actions/budgets'
+import type { Category, Budget } from '@/types'
+import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -24,17 +27,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { CategoryForm } from './category-form'
 
+interface CategoryWithBudget extends Category {
+  budget?: Budget | null
+}
+
 interface CategoriesListProps {
-  categories: Category[]
+  categories: CategoryWithBudget[]
 }
 
 export function CategoriesList({ categories }: CategoriesListProps) {
   const [formOpen, setFormOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
+  const [budgetCategory, setBudgetCategory] = useState<CategoryWithBudget | null>(null)
+  const [budgetAmount, setBudgetAmount] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const incomeCategories = categories.filter((c) => c.type === 'income')
   const expenseCategories = categories.filter((c) => c.type === 'expense')
@@ -65,7 +84,69 @@ export function CategoriesList({ categories }: CategoriesListProps) {
     }
   }
 
-  const CategoryItem = ({ category }: { category: Category }) => (
+  function openBudgetDialog(category: CategoryWithBudget) {
+    setBudgetCategory(category)
+    setBudgetAmount(category.budget?.amount?.toString() || '')
+    setBudgetDialogOpen(true)
+  }
+
+  async function handleBudgetSave() {
+    if (!budgetCategory) return
+
+    setIsSubmitting(true)
+    const amount = parseFloat(budgetAmount)
+
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount')
+      setIsSubmitting(false)
+      return
+    }
+
+    let result
+    if (budgetCategory.budget) {
+      // Update existing budget
+      result = await updateBudget(budgetCategory.budget.id, {
+        amount,
+        period: 'monthly',
+        is_active: true,
+      })
+    } else {
+      // Create new budget
+      result = await createBudget({
+        category_id: budgetCategory.id,
+        amount,
+        period: 'monthly',
+        is_active: true,
+      })
+    }
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Budget saved')
+      setBudgetDialogOpen(false)
+    }
+
+    setIsSubmitting(false)
+  }
+
+  async function handleBudgetRemove() {
+    if (!budgetCategory?.budget) return
+
+    setIsSubmitting(true)
+    const result = await deleteBudget(budgetCategory.budget.id)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Budget removed')
+      setBudgetDialogOpen(false)
+    }
+
+    setIsSubmitting(false)
+  }
+
+  const CategoryItem = ({ category }: { category: CategoryWithBudget }) => (
     <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
       <div className="flex items-center gap-3">
         <div
@@ -77,28 +158,53 @@ export function CategoriesList({ categories }: CategoriesListProps) {
             style={{ backgroundColor: category.color }}
           />
         </div>
-        <span className="font-medium">{category.name}</span>
+        <div>
+          <span className="font-medium">{category.name}</span>
+          {category.type === 'expense' && (
+            <div className="text-sm text-muted-foreground">
+              {category.budget ? (
+                <span className="text-primary">
+                  Budget: {formatCurrency(category.budget.amount)}/mo
+                </span>
+              ) : (
+                <span>No budget set</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handleEdit(category)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive"
-            onClick={() => setDeleteId(category.id)}
+      <div className="flex items-center gap-1">
+        {category.type === 'expense' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openBudgetDialog(category)}
+            title="Set Budget"
           >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DollarSign className="h-4 w-4" />
+          </Button>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEdit(category)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => setDeleteId(category.id)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   )
 
@@ -141,7 +247,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
               <Badge variant="destructive">Expenses</Badge>
               <span>{expenseCategories.length} categories</span>
             </CardTitle>
-            <CardDescription>Categories for tracking your expenses</CardDescription>
+            <CardDescription>Categories for tracking your expenses (with monthly budgets)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {expenseCategories.length === 0 ? (
@@ -160,6 +266,65 @@ export function CategoriesList({ categories }: CategoriesListProps) {
         open={formOpen}
         onOpenChange={handleFormClose}
       />
+
+      {/* Budget Dialog */}
+      <Dialog open={budgetDialogOpen} onOpenChange={setBudgetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {budgetCategory?.budget ? 'Edit Budget' : 'Set Budget'}
+            </DialogTitle>
+            <DialogDescription>
+              Set a monthly budget for {budgetCategory?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Monthly Budget Amount</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  $
+                </span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={budgetAmount}
+                  onChange={(e) => setBudgetAmount(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            <div>
+              {budgetCategory?.budget && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleBudgetRemove}
+                  disabled={isSubmitting}
+                >
+                  Remove Budget
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBudgetDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleBudgetSave} disabled={isSubmitting}>
+                Save
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

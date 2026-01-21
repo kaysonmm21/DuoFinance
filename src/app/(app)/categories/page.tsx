@@ -1,11 +1,11 @@
-import { getCategories } from '@/actions/categories'
+import { getCategoriesWithBudgets } from '@/actions/categories'
 import { CategoriesList } from '@/components/categories/categories-list'
 import { CreateDefaultCategoriesButton } from '@/components/categories/create-default-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles } from 'lucide-react'
 
 export default async function CategoriesPage() {
-  const categories = await getCategories()
+  const categories = await getCategoriesWithBudgets()
 
   if (categories.length === 0) {
     return (

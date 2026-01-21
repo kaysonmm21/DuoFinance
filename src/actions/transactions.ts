@@ -235,3 +235,44 @@ export async function getSpendingByCategory(date?: Date) {
 
   return Array.from(categoryMap.values()).sort((a, b) => b.total - a.total)
 }
+
+export async function getMonthlySpendingHistory(months: number = 6, categoryId?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return []
+
+  const now = new Date()
+  const result: { month: string; total: number }[] = []
+
+  for (let i = months - 1; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const startDate = format(startOfMonth(date), 'yyyy-MM-dd')
+    const endDate = format(endOfMonth(date), 'yyyy-MM-dd')
+
+    let query = supabase
+      .from('transactions')
+      .select('amount')
+      .eq('user_id', user.id)
+      .eq('type', 'expense')
+      .gte('date', startDate)
+      .lte('date', endDate)
+
+    if (categoryId) {
+      query = query.eq('category_id', categoryId)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    const total = (data || []).reduce((sum, tx) => sum + Number(tx.amount), 0)
+
+    result.push({
+      month: format(date, 'MMM yyyy'),
+      total,
+    })
+  }
+
+  return result
+}

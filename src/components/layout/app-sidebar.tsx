@@ -6,9 +6,10 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   Tags,
-  PiggyBank,
+  BarChart3,
   Settings,
   LogOut,
+  PiggyBank,
 } from 'lucide-react'
 
 import { signOut } from '@/actions/auth'
@@ -44,9 +45,9 @@ const navItems = [
     icon: Tags,
   },
   {
-    title: 'Budgets',
-    href: '/budgets',
-    icon: PiggyBank,
+    title: 'Analytics',
+    href: '/analytics',
+    icon: BarChart3,
   },
   {
     title: 'Settings',

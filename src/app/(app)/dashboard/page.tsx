@@ -1,37 +1,33 @@
-import { getMonthlySummary, getRecentTransactions, getSpendingByCategory } from '@/actions/transactions'
+import { getMonthlySummary, getMonthlyTransactions, getSpendingByCategory } from '@/actions/transactions'
 import { getBudgetsWithSpending } from '@/actions/budgets'
-import { SummaryCards } from '@/components/dashboard/summary-cards'
-import { SpendingChart } from '@/components/dashboard/spending-chart'
-import { BudgetProgress } from '@/components/dashboard/budget-progress'
-import { RecentTransactions } from '@/components/dashboard/recent-transactions'
+import { getCategories } from '@/actions/categories'
+import { DashboardContent } from '@/components/dashboard/dashboard-content'
+import { FloatingAddButton } from '@/components/dashboard/floating-add-button'
 
 export default async function DashboardPage() {
-  const [summary, recentTransactions, spendingByCategory, budgets] = await Promise.all([
+  const [summary, transactions, spendingByCategory, budgets, categories] = await Promise.all([
     getMonthlySummary(),
-    getRecentTransactions(5),
+    getMonthlyTransactions(),
     getSpendingByCategory(),
     getBudgetsWithSpending(),
+    getCategories(),
   ])
 
+  // Calculate total budget
+  const totalBudget = budgets.reduce((sum, b) => sum + Number(b.amount), 0)
+  const totalSpent = budgets.reduce((sum, b) => sum + (b.spent || 0), 0)
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Welcome back!</h2>
-        <p className="text-muted-foreground">Here&apos;s an overview of your finances this month.</p>
-      </div>
-
-      <SummaryCards
+    <>
+      <DashboardContent
         income={summary.income}
-        expense={summary.expense}
-        balance={summary.balance}
+        totalBudget={totalBudget}
+        totalSpent={totalSpent}
+        budgets={budgets}
+        transactions={transactions}
+        categories={categories}
       />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SpendingChart data={spendingByCategory} />
-        <BudgetProgress budgets={budgets} />
-      </div>
-
-      <RecentTransactions transactions={recentTransactions} />
-    </div>
+      <FloatingAddButton categories={categories} />
+    </>
   )
 }
