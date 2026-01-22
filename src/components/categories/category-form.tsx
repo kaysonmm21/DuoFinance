@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, TrendingUp, TrendingDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/actions/categories'
 import { categorySchema, type CategoryInput } from '@/lib/validations'
 import type { Category } from '@/types'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -91,10 +92,10 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Category' : 'Create Category'}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg font-bold">{isEditing ? 'Edit Category' : 'Create Category'}</DialogTitle>
+          <DialogDescription className="text-sm">
             {isEditing
               ? 'Update the category details below.'
               : 'Add a new category to organize your transactions.'}
@@ -107,11 +108,15 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel className="text-sm font-medium">Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Category name" {...field} />
+                    <Input
+                      placeholder="Category name"
+                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -121,19 +126,36 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
+                  <FormLabel className="text-sm font-medium">Type</FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => field.onChange('income')}
+                      className={cn(
+                        'flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all duration-200',
+                        field.value === 'income'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30'
+                          : 'border-border hover:border-emerald-300 hover:bg-emerald-50/50'
+                      )}
+                    >
+                      <TrendingUp className="h-4 w-4" strokeWidth={2} />
+                      <span className="font-medium text-sm">Income</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => field.onChange('expense')}
+                      className={cn(
+                        'flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all duration-200',
+                        field.value === 'expense'
+                          ? 'border-rose-500 bg-rose-50 text-rose-600 dark:bg-rose-950/30'
+                          : 'border-border hover:border-rose-300 hover:bg-rose-50/50'
+                      )}
+                    >
+                      <TrendingDown className="h-4 w-4" strokeWidth={2} />
+                      <span className="font-medium text-sm">Expense</span>
+                    </button>
+                  </div>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -143,22 +165,22 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
               name="icon"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Icon</FormLabel>
+                  <FormLabel className="text-sm font-medium">Icon</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-0">
                         <SelectValue placeholder="Select icon" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl">
                       {iconOptions.map((icon) => (
-                        <SelectItem key={icon} value={icon}>
+                        <SelectItem key={icon} value={icon} className="rounded-lg">
                           {icon}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -168,32 +190,49 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
               name="color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Color</FormLabel>
-                  <div className="flex flex-wrap gap-2">
+                  <FormLabel className="text-sm font-medium">Color</FormLabel>
+                  <div className="flex flex-wrap gap-2 p-3 rounded-xl bg-muted/30">
                     {colorOptions.map((color) => (
                       <button
                         key={color}
                         type="button"
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        className={cn(
+                          'w-8 h-8 rounded-full transition-all duration-200 flex items-center justify-center',
                           field.value === color
-                            ? 'border-white scale-110'
-                            : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: color }}
+                            ? 'ring-2 ring-offset-2 ring-offset-background scale-110'
+                            : 'hover:scale-105'
+                        )}
+                        style={{
+                          backgroundColor: color,
+                          ['--tw-ring-color' as string]: color,
+                        }}
                         onClick={() => field.onChange(color)}
-                      />
+                      >
+                        {field.value === color && (
+                          <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                        )}
+                      </button>
                     ))}
                   </div>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-full flex-1"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="rounded-full flex-1 ig-gradient border-0"
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? 'Update' : 'Create'}
               </Button>

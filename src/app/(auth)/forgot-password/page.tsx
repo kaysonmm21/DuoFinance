@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import { Loader2, ArrowLeft, Mail } from 'lucide-react'
 
 import { forgotPassword } from '@/actions/auth'
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/lib/validations'
@@ -45,20 +45,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Reset your password</CardTitle>
-        <CardDescription>Enter your email and we&apos;ll send you a reset link</CardDescription>
+    <Card className="border shadow-xl shadow-primary/5 rounded-2xl">
+      <CardHeader className="space-y-1 pb-4">
+        <CardTitle className="text-xl font-bold tracking-tight">Reset your password</CardTitle>
+        <CardDescription className="text-sm">Enter your email and we&apos;ll send you a reset link</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
+          <Alert variant="destructive" className="mb-4 rounded-xl">
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         )}
         {success && (
-          <Alert className="mb-4">
-            <AlertDescription>{success}</AlertDescription>
+          <Alert className="mb-4 rounded-xl border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/30">
+            <Mail className="h-4 w-4 text-emerald-600" />
+            <AlertDescription className="text-sm text-emerald-600 dark:text-emerald-400">{success}</AlertDescription>
           </Alert>
         )}
         <Form {...form}>
@@ -68,22 +69,34 @@ export default function ForgotPasswordPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-sm font-medium">Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" type="email" {...field} />
+                    <Input
+                      placeholder="you@example.com"
+                      type="email"
+                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-full font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Reset Link
             </Button>
           </form>
         </Form>
-        <div className="mt-4 text-center">
-          <Link href="/login" className="inline-flex items-center text-sm text-primary hover:underline">
+        <div className="mt-6 text-center">
+          <Link
+            href="/login"
+            className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to login
           </Link>

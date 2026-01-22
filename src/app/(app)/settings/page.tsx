@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, User, DollarSign, Shield } from 'lucide-react'
+import { Loader2, User, DollarSign, Shield, Mail, Lock, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { getProfile, updateProfile } from '@/actions/profile'
@@ -86,31 +86,37 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl mx-auto">
       <div>
-        <h2 className="text-2xl font-bold">Settings</h2>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
+        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+        <p className="text-muted-foreground text-sm mt-1">Manage your account and preferences</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile
-          </CardTitle>
-          <CardDescription>
-            Your personal information
-          </CardDescription>
+      {/* Profile Card */}
+      <Card className="border shadow-sm rounded-2xl ig-card-hover">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" strokeWidth={2} />
+            </div>
+            <div>
+              <CardTitle className="text-base">Profile</CardTitle>
+              <CardDescription className="text-xs">Your personal information</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Email
+                </label>
                 <Input
                   value={profile?.email || ''}
                   disabled
-                  className="bg-muted"
+                  className="h-11 rounded-xl bg-muted/30 border-0"
                 />
                 <p className="text-xs text-muted-foreground">
                   Email cannot be changed
@@ -122,16 +128,25 @@ export default function SettingsPage() {
                 name="full_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel className="text-sm font-medium">Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your name" {...field} value={field.value || ''} />
+                      <Input
+                        placeholder="Enter your name"
+                        className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                        {...field}
+                        value={field.value || ''}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="rounded-full h-10 px-6 font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
@@ -140,15 +155,18 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Preferences
-          </CardTitle>
-          <CardDescription>
-            Customize your experience
-          </CardDescription>
+      {/* Preferences Card */}
+      <Card className="border shadow-sm rounded-2xl ig-card-hover">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
+            </div>
+            <div>
+              <CardTitle className="text-base">Preferences</CardTitle>
+              <CardDescription className="text-xs">Customize your experience</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -158,33 +176,37 @@ export default function SettingsPage() {
                 name="currency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Currency</FormLabel>
+                    <FormLabel className="text-sm font-medium">Currency</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-0">
                           <SelectValue placeholder="Select currency" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         {currencies.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
+                          <SelectItem key={currency.code} value={currency.code} className="rounded-lg">
                             <span className="flex items-center gap-2">
-                              <span className="font-mono">{currency.symbol}</span>
+                              <span className="font-mono text-primary">{currency.symbol}</span>
                               <span>{currency.name} ({currency.code})</span>
                             </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>
+                    <FormDescription className="text-xs">
                       Choose your preferred currency for displaying amounts
                     </FormDescription>
-                    <FormMessage />
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="rounded-full h-10 px-6 font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
@@ -193,38 +215,53 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Security
-          </CardTitle>
-          <CardDescription>
-            Manage your account security
-          </CardDescription>
+      {/* Security Card */}
+      <Card className="border shadow-sm rounded-2xl ig-card-hover">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center">
+              <Shield className="h-5 w-5 text-violet-600 dark:text-violet-400" strokeWidth={2} />
+            </div>
+            <div>
+              <CardTitle className="text-base">Security</CardTitle>
+              <CardDescription className="text-xs">Manage your account security</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Password</p>
-              <p className="text-sm text-muted-foreground">
-                Change your password
-              </p>
+          <div className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <Lock className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Password</p>
+                <p className="text-xs text-muted-foreground">
+                  Change your password
+                </p>
+              </div>
             </div>
-            <Button variant="outline" asChild>
-              <a href="/forgot-password">Change Password</a>
+            <Button variant="outline" asChild className="rounded-full h-9 px-4 text-sm">
+              <a href="/forgot-password">Change</a>
             </Button>
           </div>
+
           <Separator />
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-destructive">Delete Account</p>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all data
-              </p>
+
+          <div className="flex items-center justify-between p-3 rounded-xl hover:bg-destructive/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="font-medium text-sm text-destructive">Delete Account</p>
+                <p className="text-xs text-muted-foreground">
+                  Permanently delete your account and all data
+                </p>
+              </div>
             </div>
-            <Button variant="destructive" disabled>
-              Delete Account
+            <Button variant="destructive" disabled className="rounded-full h-9 px-4 text-sm">
+              Delete
             </Button>
           </div>
         </CardContent>

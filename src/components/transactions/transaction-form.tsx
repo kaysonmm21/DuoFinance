@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, CalendarIcon } from 'lucide-react'
+import { Loader2, CalendarIcon, TrendingUp, TrendingDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
@@ -104,10 +104,10 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg font-bold">{isEditing ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
+          <DialogDescription className="text-sm">
             {isEditing
               ? 'Update the transaction details below.'
               : 'Record a new income or expense.'}
@@ -115,24 +115,42 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Type Toggle */}
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
+                  <FormLabel className="text-sm font-medium">Type</FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => field.onChange('income')}
+                      className={cn(
+                        'flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all duration-200',
+                        field.value === 'income'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30'
+                          : 'border-border hover:border-emerald-300 hover:bg-emerald-50/50'
+                      )}
+                    >
+                      <TrendingUp className="h-4 w-4" strokeWidth={2} />
+                      <span className="font-medium text-sm">Income</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => field.onChange('expense')}
+                      className={cn(
+                        'flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all duration-200',
+                        field.value === 'expense'
+                          ? 'border-rose-500 bg-rose-50 text-rose-600 dark:bg-rose-950/30'
+                          : 'border-border hover:border-rose-300 hover:bg-rose-50/50'
+                      )}
+                    >
+                      <TrendingDown className="h-4 w-4" strokeWidth={2} />
+                      <span className="font-medium text-sm">Expense</span>
+                    </button>
+                  </div>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -142,18 +160,22 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel className="text-sm font-medium">Amount</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        className="pl-8 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -163,11 +185,15 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel className="text-sm font-medium">Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="What was this for?" {...field} />
+                    <Input
+                      placeholder="What was this for?"
+                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -177,16 +203,16 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
               name="category_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel className="text-sm font-medium">Category</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ''}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-0">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl">
                       {filteredCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category.id} value={category.id} className="rounded-lg">
                           <div className="flex items-center gap-2">
                             <div
                               className="w-3 h-3 rounded-full"
@@ -198,7 +224,7 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -208,27 +234,27 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
               name="date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
+                  <FormLabel className="text-sm font-medium">Date</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           variant="outline"
                           className={cn(
-                            'w-full pl-3 text-left font-normal',
+                            'w-full h-11 rounded-xl bg-muted/50 border-0 pl-4 text-left font-normal justify-start hover:bg-muted/70',
                             !field.value && 'text-muted-foreground'
                           )}
                         >
+                          <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                           {field.value ? (
                             format(new Date(field.value), 'PPP')
                           ) : (
                             <span>Pick a date</span>
                           )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 rounded-xl" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
@@ -238,7 +264,7 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
                       />
                     </PopoverContent>
                   </Popover>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -248,25 +274,34 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormLabel className="text-sm font-medium">Notes (optional)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Add any additional notes..."
-                      className="resize-none"
+                      className="resize-none rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20 min-h-[80px]"
                       {...field}
                       value={field.value || ''}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-full flex-1"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="rounded-full flex-1 ig-gradient border-0"
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? 'Update' : 'Add'}
               </Button>

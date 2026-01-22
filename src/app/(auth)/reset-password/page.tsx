@@ -41,15 +41,15 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Set new password</CardTitle>
-        <CardDescription>Enter your new password below</CardDescription>
+    <Card className="border shadow-xl shadow-primary/5 rounded-2xl">
+      <CardHeader className="space-y-1 pb-4">
+        <CardTitle className="text-xl font-bold tracking-tight">Set new password</CardTitle>
+        <CardDescription className="text-sm">Enter your new password below</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
+          <Alert variant="destructive" className="mb-4 rounded-xl">
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         )}
         <Form {...form}>
@@ -59,11 +59,16 @@ export default function ResetPasswordPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                  <FormLabel className="text-sm font-medium">New Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter new password" type="password" {...field} />
+                    <Input
+                      placeholder="Enter new password"
+                      type="password"
+                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -72,15 +77,24 @@ export default function ResetPasswordPage() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel className="text-sm font-medium">Confirm Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="Confirm new password" type="password" {...field} />
+                    <Input
+                      placeholder="Confirm new password"
+                      type="password"
+                      className="h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-full font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Password
             </Button>

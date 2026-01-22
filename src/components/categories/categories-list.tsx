@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Plus, DollarSign } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Tags } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { deleteCategory } from '@/actions/categories'
@@ -35,7 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { CategoryForm } from './category-form'
 
 interface CategoryWithBudget extends Category {
@@ -104,14 +103,12 @@ export function CategoriesList({ categories }: CategoriesListProps) {
 
     let result
     if (budgetCategory.budget) {
-      // Update existing budget
       result = await updateBudget(budgetCategory.budget.id, {
         amount,
         period: 'monthly',
         is_active: true,
       })
     } else {
-      // Create new budget
       result = await createBudget({
         category_id: budgetCategory.id,
         amount,
@@ -147,11 +144,11 @@ export function CategoriesList({ categories }: CategoriesListProps) {
   }
 
   const CategoryItem = ({ category }: { category: CategoryWithBudget }) => (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+    <div className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors group">
       <div className="flex items-center gap-3">
         <div
-          className="w-10 h-10 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: category.color + '20' }}
+          className="w-11 h-11 rounded-full flex items-center justify-center transition-transform group-hover:scale-105"
+          style={{ backgroundColor: category.color + '15' }}
         >
           <div
             className="w-4 h-4 rounded-full"
@@ -159,11 +156,11 @@ export function CategoriesList({ categories }: CategoriesListProps) {
           />
         </div>
         <div>
-          <span className="font-medium">{category.name}</span>
+          <span className="font-medium text-sm">{category.name}</span>
           {category.type === 'expense' && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs text-muted-foreground mt-0.5">
               {category.budget ? (
-                <span className="text-primary">
+                <span className="text-primary font-medium">
                   Budget: {formatCurrency(category.budget.amount)}/mo
                 </span>
               ) : (
@@ -180,23 +177,28 @@ export function CategoriesList({ categories }: CategoriesListProps) {
             size="icon"
             onClick={() => openBudgetDialog(category)}
             title="Set Budget"
+            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <DollarSign className="h-4 w-4" />
           </Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEdit(category)}>
+          <DropdownMenuContent align="end" className="rounded-xl w-36">
+            <DropdownMenuItem onClick={() => handleEdit(category)} className="rounded-lg">
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="text-destructive"
+              className="text-destructive rounded-lg focus:text-destructive"
               onClick={() => setDeleteId(category.id)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -209,53 +211,82 @@ export function CategoriesList({ categories }: CategoriesListProps) {
   )
 
   return (
-    <>
+    <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Categories</h2>
-          <p className="text-muted-foreground">Manage your income and expense categories</p>
+          <h2 className="text-2xl font-bold tracking-tight">Categories</h2>
+          <p className="text-muted-foreground text-sm mt-1">Manage your income and expense categories</p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
+        <Button
+          onClick={() => setFormOpen(true)}
+          className="rounded-full h-10 px-5 font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+        >
+          <Plus className="mr-2 h-4 w-4" strokeWidth={2.5} />
+          Add
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Badge variant="default" className="bg-green-500">Income</Badge>
-              <span>{incomeCategories.length} categories</span>
+        {/* Income Categories */}
+        <Card className="border shadow-sm rounded-2xl overflow-hidden ig-card-hover">
+          <CardHeader className="pb-3 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
+              </div>
+              <span>Income</span>
+              <span className="text-muted-foreground font-normal text-sm ml-auto">
+                {incomeCategories.length}
+              </span>
             </CardTitle>
-            <CardDescription>Categories for tracking your income</CardDescription>
+            <CardDescription className="text-xs">Categories for tracking your income</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="pt-2">
             {incomeCategories.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No income categories yet</p>
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                  <Tags className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground text-sm">No income categories yet</p>
+              </div>
             ) : (
-              incomeCategories.map((category) => (
-                <CategoryItem key={category.id} category={category} />
-              ))
+              <div className="space-y-1">
+                {incomeCategories.map((category) => (
+                  <CategoryItem key={category.id} category={category} />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Badge variant="destructive">Expenses</Badge>
-              <span>{expenseCategories.length} categories</span>
+        {/* Expense Categories */}
+        <Card className="border shadow-sm rounded-2xl overflow-hidden ig-card-hover">
+          <CardHeader className="pb-3 bg-gradient-to-br from-rose-50/50 to-orange-50/50 dark:from-rose-950/20 dark:to-orange-950/20">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center">
+                <TrendingDown className="h-4 w-4 text-rose-600 dark:text-rose-400" strokeWidth={2} />
+              </div>
+              <span>Expenses</span>
+              <span className="text-muted-foreground font-normal text-sm ml-auto">
+                {expenseCategories.length}
+              </span>
             </CardTitle>
-            <CardDescription>Categories for tracking your expenses (with monthly budgets)</CardDescription>
+            <CardDescription className="text-xs">Categories for tracking your expenses (with budgets)</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="pt-2">
             {expenseCategories.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No expense categories yet</p>
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                  <Tags className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground text-sm">No expense categories yet</p>
+              </div>
             ) : (
-              expenseCategories.map((category) => (
-                <CategoryItem key={category.id} category={category} />
-              ))
+              <div className="space-y-1">
+                {expenseCategories.map((category) => (
+                  <CategoryItem key={category.id} category={category} />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -269,7 +300,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
 
       {/* Budget Dialog */}
       <Dialog open={budgetDialogOpen} onOpenChange={setBudgetDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle>
               {budgetCategory?.budget ? 'Edit Budget' : 'Set Budget'}
@@ -282,7 +313,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
             <div className="space-y-2">
               <label className="text-sm font-medium">Monthly Budget Amount</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                   $
                 </span>
                 <Input
@@ -292,12 +323,12 @@ export function CategoriesList({ categories }: CategoriesListProps) {
                   placeholder="0.00"
                   value={budgetAmount}
                   onChange={(e) => setBudgetAmount(e.target.value)}
-                  className="pl-7"
+                  className="pl-8 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
                 />
               </div>
             </div>
           </div>
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="flex justify-between gap-2">
             <div>
               {budgetCategory?.budget && (
                 <Button
@@ -305,6 +336,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
                   variant="destructive"
                   onClick={handleBudgetRemove}
                   disabled={isSubmitting}
+                  className="rounded-full"
                 >
                   Remove Budget
                 </Button>
@@ -315,10 +347,15 @@ export function CategoriesList({ categories }: CategoriesListProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setBudgetDialogOpen(false)}
+                className="rounded-full"
               >
                 Cancel
               </Button>
-              <Button onClick={handleBudgetSave} disabled={isSubmitting}>
+              <Button
+                onClick={handleBudgetSave}
+                disabled={isSubmitting}
+                className="rounded-full ig-gradient border-0"
+              >
                 Save
               </Button>
             </div>
@@ -327,7 +364,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
       </Dialog>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
@@ -337,13 +374,16 @@ export function CategoriesList({ categories }: CategoriesListProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+            <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive rounded-full hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 }

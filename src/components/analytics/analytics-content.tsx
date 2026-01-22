@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
+import { PieChartIcon, BarChart3 } from 'lucide-react'
 
 import { getMonthlySpendingHistory } from '@/actions/transactions'
 import { formatCurrency } from '@/lib/utils'
@@ -73,10 +74,10 @@ export function AnalyticsContent({
       const data = payload[0].payload
       const percentage = ((data.total / totalSpending) * 100).toFixed(1)
       return (
-        <div className="bg-popover text-popover-foreground rounded-lg border p-3 shadow-md">
-          <p className="font-medium">{data.name}</p>
+        <div className="bg-popover text-popover-foreground rounded-xl border p-3 shadow-lg">
+          <p className="font-medium text-sm">{data.name}</p>
           <p className="text-sm">{formatCurrency(data.total)}</p>
-          <p className="text-sm text-muted-foreground">{percentage}%</p>
+          <p className="text-xs text-muted-foreground">{percentage}%</p>
         </div>
       )
     }
@@ -87,8 +88,8 @@ export function AnalyticsContent({
   const CustomBarTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-popover text-popover-foreground rounded-lg border p-3 shadow-md">
-          <p className="font-medium">{label}</p>
+        <div className="bg-popover text-popover-foreground rounded-xl border p-3 shadow-lg">
+          <p className="font-medium text-sm">{label}</p>
           <p className="text-sm">{formatCurrency(payload[0].value)}</p>
         </div>
       )
@@ -97,40 +98,53 @@ export function AnalyticsContent({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold mb-2">Analytics</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
+        <p className="text-muted-foreground text-sm mt-1">
           Visualize your spending patterns and trends
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Spending by Category Donut Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Spending by Category</CardTitle>
-            <CardDescription>This month&apos;s expenses breakdown</CardDescription>
+        <Card className="border shadow-sm rounded-2xl ig-card-hover">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <PieChartIcon className="h-4 w-4 text-primary" strokeWidth={2} />
+              </div>
+              <div>
+                <CardTitle className="text-base">Spending by Category</CardTitle>
+                <CardDescription className="text-xs">This month&apos;s breakdown</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {spendingByCategory.length === 0 ? (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No spending data this month
+              <div className="flex items-center justify-center h-[280px]">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                    <PieChartIcon className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">No spending data this month</p>
+                </div>
               </div>
             ) : (
-              <div className="h-[300px]">
+              <div className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={spendingByCategory}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
+                      innerRadius={55}
+                      outerRadius={90}
+                      paddingAngle={3}
                       dataKey="total"
                       nameKey="name"
+                      strokeWidth={0}
                     >
                       {spendingByCategory.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -141,8 +155,10 @@ export function AnalyticsContent({
                       layout="vertical"
                       align="right"
                       verticalAlign="middle"
+                      iconType="circle"
+                      iconSize={8}
                       formatter={(value) => (
-                        <span className="text-sm">{value}</span>
+                        <span className="text-xs text-foreground">{value}</span>
                       )}
                     />
                   </PieChart>
@@ -150,71 +166,94 @@ export function AnalyticsContent({
               </div>
             )}
             {spendingByCategory.length > 0 && (
-              <div className="text-center mt-4">
-                <p className="text-sm text-muted-foreground">Total Spending</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalSpending)}</p>
+              <div className="text-center mt-2 pt-4 border-t">
+                <p className="text-xs text-muted-foreground">Total Spending</p>
+                <p className="text-xl font-bold">{formatCurrency(totalSpending)}</p>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Monthly Spending Trend */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Spending Over Time</CardTitle>
-              <CardDescription>Last 6 months spending trend</CardDescription>
+        <Card className="border shadow-sm rounded-2xl ig-card-hover">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <BarChart3 className="h-4 w-4 text-primary" strokeWidth={2} />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Spending Over Time</CardTitle>
+                  <CardDescription className="text-xs">Last 6 months trend</CardDescription>
+                </div>
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[140px] h-9 rounded-xl text-xs">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all" className="rounded-lg text-xs">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id} className="rounded-lg text-xs">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      {category.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[280px]">
               {isLoading ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  Loading...
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                 </div>
               ) : monthlyHistory.every(m => m.total === 0) ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No spending data for this period
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                      <BarChart3 className="h-7 w-7 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground text-sm">No spending data for this period</p>
+                  </div>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlyHistory}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" vertical={false} />
                     <XAxis
                       dataKey="month"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
                       className="text-muted-foreground"
                     />
                     <YAxis
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
                       tickFormatter={(value) => `$${value}`}
                       className="text-muted-foreground"
+                      width={50}
                     />
                     <Tooltip content={<CustomBarTooltip />} />
                     <Bar
                       dataKey="total"
-                      fill="hsl(var(--primary))"
-                      radius={[4, 4, 0, 0]}
+                      fill="url(#barGradient)"
+                      radius={[6, 6, 0, 0]}
                     />
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="oklch(0.65 0.25 350)" />
+                        <stop offset="100%" stopColor="oklch(0.55 0.28 290)" />
+                      </linearGradient>
+                    </defs>
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -224,35 +263,40 @@ export function AnalyticsContent({
       </div>
 
       {/* Category Breakdown Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Category Breakdown</CardTitle>
-          <CardDescription>Detailed spending by category this month</CardDescription>
+      <Card className="border shadow-sm rounded-2xl ig-card-hover">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">Category Breakdown</CardTitle>
+          <CardDescription className="text-sm">Detailed spending by category this month</CardDescription>
         </CardHeader>
         <CardContent>
           {spendingByCategory.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-muted-foreground text-center py-8 text-sm">
               No spending data this month
             </p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {spendingByCategory.map((category, index) => {
                 const percentage = ((category.total / totalSpending) * 100).toFixed(1)
                 return (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors group"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="font-medium">{category.name}</span>
+                        className="w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: category.color + '15' }}
+                      >
+                        <div
+                          className="w-3.5 h-3.5 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                      </div>
+                      <span className="font-medium text-sm">{category.name}</span>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">{formatCurrency(category.total)}</p>
-                      <p className="text-sm text-muted-foreground">{percentage}%</p>
+                      <p className="font-semibold text-sm tabular-nums">{formatCurrency(category.total)}</p>
+                      <p className="text-xs text-muted-foreground">{percentage}%</p>
                     </div>
                   </div>
                 )

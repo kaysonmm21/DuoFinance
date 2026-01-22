@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
-import { ArrowUpCircle, Target, AlertTriangle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Target, AlertTriangle, MoreHorizontal, Pencil, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { formatCurrency, calculatePercentage } from '@/lib/utils'
@@ -80,109 +80,124 @@ export function DashboardContent({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Dashboard</h2>
-        <p className="text-muted-foreground">
+    <div className="space-y-6 stagger-children max-w-4xl mx-auto">
+      {/* Greeting Header */}
+      <div className="pt-2">
+        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+        <p className="text-muted-foreground text-sm mt-1">
           {format(new Date(), 'MMMM yyyy')} Overview
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Summary Cards - Instagram Story Style */}
+      <div className="grid gap-4 grid-cols-2">
         {/* Income Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">
-              +{formatCurrency(income)}
+        <Card className="border-0 shadow-none bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 ig-card-hover">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Income</p>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    +{formatCurrency(income)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">This month</p>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         {/* Budget Progress Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Budget</CardTitle>
-            <Target className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-baseline justify-between">
-              <div className="text-2xl font-bold">
-                {formatCurrency(totalSpent)}
+        <Card className="border-0 shadow-none bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 ig-card-hover">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-3 flex-1">
+                <p className="text-sm font-medium text-violet-600 dark:text-violet-400">Budget</p>
+                <div>
+                  <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                    {formatCurrency(totalSpent)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    of {formatCurrency(totalBudget)}
+                  </p>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                of {formatCurrency(totalBudget)}
+              <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <Target className="h-5 w-5 text-violet-600 dark:text-violet-400" strokeWidth={2} />
               </div>
             </div>
-            <Progress
-              value={Math.min(budgetPercentage, 100)}
-              className={
-                budgetPercentage > 100
-                  ? '[&>div]:bg-red-500'
-                  : budgetPercentage >= 80
-                  ? '[&>div]:bg-yellow-500'
-                  : '[&>div]:bg-green-500'
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              {remaining >= 0
-                ? `${formatCurrency(remaining)} remaining`
-                : `${formatCurrency(Math.abs(remaining))} over budget`}
-            </p>
+            <div className="mt-4">
+              <Progress
+                value={Math.min(budgetPercentage, 100)}
+                className="h-2 bg-violet-200/50 dark:bg-violet-800/30 [&>div]:bg-gradient-to-r [&>div]:from-violet-500 [&>div]:to-purple-500"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                {remaining >= 0
+                  ? `${formatCurrency(remaining)} remaining`
+                  : `${formatCurrency(Math.abs(remaining))} over budget`}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Category Budget Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Spending by Category</CardTitle>
-          <CardDescription>Track your spending against each budget</CardDescription>
+      <Card className="border shadow-sm ig-card-hover">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold">Spending by Category</CardTitle>
+          <CardDescription className="text-sm">Track your spending against each budget</CardDescription>
         </CardHeader>
         <CardContent>
           {budgets.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
+            <p className="text-muted-foreground text-center py-8 text-sm">
               No budgets set. Add budgets in the Categories page.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {budgets.map((budget) => {
                 const spent = budget.spent || 0
                 const percentage = calculatePercentage(spent, budget.amount)
                 const isOverBudget = spent > budget.amount
+                const isNearLimit = percentage >= 80 && !isOverBudget
 
                 return (
-                  <div key={budget.id} className="space-y-2">
+                  <div key={budget.id} className="space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: budget.category.color }}
-                        />
-                        <span className="font-medium text-sm">{budget.category.name}</span>
-                        {isOverBudget && (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
+                          className="w-8 h-8 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: budget.category.color + '15' }}
+                        >
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: budget.category.color }}
+                          />
+                        </div>
+                        <div>
+                          <span className="font-medium text-sm">{budget.category.name}</span>
+                          {isOverBudget && (
+                            <AlertTriangle className="inline-block ml-1.5 h-3.5 w-3.5 text-red-500" />
+                          )}
+                        </div>
                       </div>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-muted-foreground tabular-nums">
                         {formatCurrency(spent)} / {formatCurrency(budget.amount)}
                       </span>
                     </div>
                     <Progress
                       value={Math.min(percentage, 100)}
-                      className={
-                        isOverBudget
-                          ? '[&>div]:bg-red-500'
-                          : percentage >= 80
-                          ? '[&>div]:bg-yellow-500'
-                          : ''
-                      }
+                      className="h-2"
+                      style={{
+                        ['--progress-color' as string]: isOverBudget
+                          ? 'oklch(0.62 0.24 25)'
+                          : isNearLimit
+                          ? 'oklch(0.78 0.16 85)'
+                          : budget.category.color,
+                      }}
                     />
                   </div>
                 )
@@ -193,28 +208,29 @@ export function DashboardContent({
       </Card>
 
       {/* Transactions List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transactions</CardTitle>
-          <CardDescription>All transactions this month</CardDescription>
+      <Card className="border shadow-sm ig-card-hover">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
+          <CardDescription className="text-sm">All transactions this month</CardDescription>
         </CardHeader>
         <CardContent>
           {transactions.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-muted-foreground text-center py-8 text-sm">
               No transactions this month. Click the + button to add one.
             </p>
           ) : (
-            <div className="space-y-2">
-              {transactions.map((transaction) => (
+            <div className="space-y-1">
+              {transactions.map((transaction, index) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
+                  className="flex items-center justify-between p-3 -mx-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex items-center gap-3">
                     {transaction.category && (
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: transaction.category.color + '20' }}
+                        className="w-11 h-11 rounded-full flex items-center justify-center transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: transaction.category.color + '15' }}
                       >
                         <div
                           className="w-4 h-4 rounded-full"
@@ -223,21 +239,21 @@ export function DashboardContent({
                       </div>
                     )}
                     {!transaction.category && (
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-muted">
-                        <div className="w-4 h-4 rounded-full bg-gray-400" />
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center bg-muted">
+                        <div className="w-4 h-4 rounded-full bg-muted-foreground/30" />
                       </div>
                     )}
                     <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">{transaction.description}</p>
+                      <p className="text-xs text-muted-foreground">
                         {transaction.category?.name || 'Uncategorized'} • {format(new Date(transaction.date), 'MMM d')}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`font-semibold ${
-                        transaction.type === 'income' ? 'text-green-500' : 'text-red-500'
+                      className={`font-semibold text-sm tabular-nums ${
+                        transaction.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'
                       }`}
                     >
                       {transaction.type === 'income' ? '+' : '-'}
@@ -245,17 +261,17 @@ export function DashboardContent({
                     </span>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(transaction)}>
+                      <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem onClick={() => handleEdit(transaction)} className="rounded-lg">
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-destructive"
+                          className="text-destructive rounded-lg focus:text-destructive"
                           onClick={() => setDeleteId(transaction.id)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
@@ -281,7 +297,7 @@ export function DashboardContent({
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
             <AlertDialogDescription>
@@ -289,8 +305,8 @@ export function DashboardContent({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+            <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive rounded-full hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
