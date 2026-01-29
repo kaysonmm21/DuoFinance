@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Plus, TrendingUp, TrendingDown } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import { format, addMonths, subMonths } from 'date-fns'
 import { toast } from 'sonner'
 
 import { deleteTransaction } from '@/actions/transactions'
@@ -25,6 +26,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { TransactionForm } from './transaction-form'
 
@@ -37,6 +46,9 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
   const [formOpen, setFormOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exportMonth, setExportMonth] = useState(new Date())
+  const [isExporting, setIsExporting] = useState(false)
 
   async function handleDelete() {
     if (!deleteId) return
@@ -64,6 +76,32 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
     }
   }
 
+  async function handleExport() {
+    setIsExporting(true)
+    const month = format(exportMonth, 'yyyy-MM')
+    try {
+      const res = await fetch(`/api/export?month=${month}`)
+      if (!res.ok) {
+        const err = await res.json()
+        toast.error(err.error || 'Export failed')
+        setIsExporting(false)
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Spending_${format(exportMonth, 'MMMM_yyyy')}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Export downloaded')
+      setExportOpen(false)
+    } catch {
+      toast.error('Export failed')
+    }
+    setIsExporting(false)
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -71,13 +109,23 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
           <h2 className="text-2xl font-bold tracking-tight">Transactions</h2>
           <p className="text-muted-foreground text-sm mt-1">Track your income and expenses</p>
         </div>
-        <Button
-          onClick={() => setFormOpen(true)}
-          className="rounded-full h-10 px-5 font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
-        >
-          <Plus className="mr-2 h-4 w-4" strokeWidth={2.5} />
-          Add
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setExportOpen(true)}
+            className="rounded-full h-10 px-5 font-semibold"
+          >
+            <Download className="mr-2 h-4 w-4" strokeWidth={2.5} />
+            Export
+          </Button>
+          <Button
+            onClick={() => setFormOpen(true)}
+            className="rounded-full h-10 px-5 font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
+          >
+            <Plus className="mr-2 h-4 w-4" strokeWidth={2.5} />
+            Add
+          </Button>
+        </div>
       </div>
 
       <Card className="border shadow-sm rounded-2xl overflow-hidden">
@@ -224,6 +272,55 @@ export function TransactionsList({ transactions, categories }: TransactionsListP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export Month Picker Dialog */}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="rounded-2xl max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Export Transactions</DialogTitle>
+            <DialogDescription>
+              Select a month to export as XLSX
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center gap-3 py-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setExportMonth(prev => subMonths(prev, 1))}
+              className="h-9 w-9 rounded-full"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <span className="text-sm font-semibold min-w-[140px] text-center">
+              {format(exportMonth, 'MMMM yyyy')}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setExportMonth(prev => addMonths(prev, 1))}
+              className="h-9 w-9 rounded-full"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setExportOpen(false)}
+              className="rounded-full flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="rounded-full flex-1 ig-gradient border-0"
+            >
+              {isExporting ? 'Exporting...' : 'Download'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

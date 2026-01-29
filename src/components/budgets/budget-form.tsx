@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { format } from 'date-fns'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -53,6 +54,7 @@ export function BudgetForm({ budget, categories, open, onOpenChange }: BudgetFor
       category_id: budget?.category_id || '',
       amount: budget?.amount || 0,
       period: budget?.period || 'monthly',
+      budget_month: budget?.budget_month || format(new Date(), 'yyyy-MM'),
       is_active: budget?.is_active ?? true,
     },
   })

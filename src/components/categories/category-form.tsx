@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, TrendingUp, TrendingDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/actions/categories'
+import { createBudget, updateBudget, deleteBudget } from '@/actions/budgets'
 import { categorySchema, type CategoryInput } from '@/lib/validations'
-import type { Category } from '@/types'
+import type { Category, Budget } from '@/types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,14 +53,20 @@ const colorOptions = [
   '#f43f5e', '#64748b',
 ]
 
-interface CategoryFormProps {
-  category?: Category | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
+interface CategoryWithBudget extends Category {
+  budget?: (Budget & { _inherited?: boolean }) | null
 }
 
-export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps) {
+interface CategoryFormProps {
+  category?: CategoryWithBudget | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  selectedMonth?: string
+}
+
+export function CategoryForm({ category, open, onOpenChange, selectedMonth }: CategoryFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [budgetAmount, setBudgetAmount] = useState('')
   const isEditing = !!category
 
   const form = useForm<CategoryInput>({
@@ -72,6 +79,29 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
     },
   })
 
+  // Reset form and budget when category changes
+  useEffect(() => {
+    if (category) {
+      form.reset({
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+        type: category.type,
+      })
+      setBudgetAmount(category.budget?.amount?.toString() || '')
+    } else {
+      form.reset({
+        name: '',
+        icon: 'circle',
+        color: '#6366f1',
+        type: 'expense',
+      })
+      setBudgetAmount('')
+    }
+  }, [category, form])
+
+  const watchType = form.watch('type')
+
   async function onSubmit(data: CategoryInput) {
     setIsLoading(true)
 
@@ -81,12 +111,45 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
 
     if (result.error) {
       toast.error(result.error)
-    } else {
-      toast.success(isEditing ? 'Category updated' : 'Category created')
-      onOpenChange(false)
-      form.reset()
+      setIsLoading(false)
+      return
     }
 
+    // Handle budget for expense categories
+    if (data.type === 'expense' && selectedMonth) {
+      const amount = parseFloat(budgetAmount)
+      const categoryId = isEditing ? category.id : (result as any).data?.id
+
+      if (categoryId) {
+        if (!isNaN(amount) && amount > 0) {
+          // Has a real (non-inherited) budget for this month — update it
+          if (category?.budget && !category.budget._inherited) {
+            await updateBudget(category.budget.id, {
+              amount,
+              period: 'monthly',
+              is_active: true,
+            })
+          } else {
+            // Create new budget for this month (or inherited → create fresh)
+            await createBudget({
+              category_id: categoryId,
+              amount,
+              period: 'monthly',
+              budget_month: selectedMonth,
+              is_active: true,
+            })
+          }
+        } else if (category?.budget && !category.budget._inherited) {
+          // Amount cleared — remove the budget for this month
+          await deleteBudget(category.budget.id)
+        }
+      }
+    }
+
+    toast.success(isEditing ? 'Category updated' : 'Category created')
+    onOpenChange(false)
+    form.reset()
+    setBudgetAmount('')
     setIsLoading(false)
   }
 
@@ -120,6 +183,30 @@ export function CategoryForm({ category, open, onOpenChange }: CategoryFormProps
                 </FormItem>
               )}
             />
+
+            {/* Budget Amount - only for expense categories when editing */}
+            {watchType === 'expense' && selectedMonth && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Monthly Budget</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    $
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={budgetAmount}
+                    onChange={(e) => setBudgetAmount(e.target.value)}
+                    className="pl-8 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Leave empty for no budget
+                </p>
+              </div>
+            )}
 
             <FormField
               control={form.control}

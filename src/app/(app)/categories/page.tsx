@@ -1,11 +1,18 @@
+import { format } from 'date-fns'
 import { getCategoriesWithBudgets } from '@/actions/categories'
 import { CategoriesList } from '@/components/categories/categories-list'
 import { CreateDefaultCategoriesButton } from '@/components/categories/create-default-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles } from 'lucide-react'
 
-export default async function CategoriesPage() {
-  const categories = await getCategoriesWithBudgets()
+export default async function CategoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>
+}) {
+  const params = await searchParams
+  const selectedMonth = params.month || format(new Date(), 'yyyy-MM')
+  const categories = await getCategoriesWithBudgets(selectedMonth)
 
   if (categories.length === 0) {
     return (
@@ -26,5 +33,5 @@ export default async function CategoriesPage() {
     )
   }
 
-  return <CategoriesList categories={categories} />
+  return <CategoriesList categories={categories} selectedMonth={selectedMonth} />
 }

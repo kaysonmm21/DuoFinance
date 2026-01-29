@@ -119,16 +119,37 @@ export async function createBudget(input: BudgetInput) {
     return { error: 'Not authenticated' }
   }
 
-  // Check if budget already exists for this category
+  // Check if budget already exists for this category + month
   const { data: existing } = await supabase
     .from('budgets')
     .select('id')
     .eq('user_id', user.id)
     .eq('category_id', input.category_id)
+    .eq('budget_month', input.budget_month)
     .single()
 
   if (existing) {
-    return { error: 'A budget already exists for this category' }
+    // Update the existing budget instead
+    const { data, error } = await supabase
+      .from('budgets')
+      .update({
+        amount: input.amount,
+        period: input.period,
+        is_active: input.is_active,
+      })
+      .eq('id', existing.id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/budgets')
+    revalidatePath('/dashboard')
+    revalidatePath('/categories')
+    return { data }
   }
 
   const { data, error } = await supabase
@@ -138,6 +159,7 @@ export async function createBudget(input: BudgetInput) {
       category_id: input.category_id,
       amount: input.amount,
       period: input.period,
+      budget_month: input.budget_month,
       is_active: input.is_active,
     })
     .select()
@@ -149,6 +171,7 @@ export async function createBudget(input: BudgetInput) {
 
   revalidatePath('/budgets')
   revalidatePath('/dashboard')
+  revalidatePath('/categories')
   return { data }
 }
 
@@ -178,6 +201,7 @@ export async function updateBudget(id: string, input: Partial<BudgetInput>) {
 
   revalidatePath('/budgets')
   revalidatePath('/dashboard')
+  revalidatePath('/categories')
   return { data }
 }
 
@@ -201,6 +225,7 @@ export async function deleteBudget(id: string) {
 
   revalidatePath('/budgets')
   revalidatePath('/dashboard')
+  revalidatePath('/categories')
   return { success: true }
 }
 

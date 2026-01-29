@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Plus, DollarSign, TrendingUp, TrendingDown, Tags } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { MoreHorizontal, Pencil, Trash2, Plus, TrendingUp, TrendingDown, Tags, ChevronLeft, ChevronRight } from 'lucide-react'
+import { format, addMonths, subMonths, parse } from 'date-fns'
 import { toast } from 'sonner'
 
 import { deleteCategory } from '@/actions/categories'
-import { createBudget, updateBudget, deleteBudget } from '@/actions/budgets'
 import type { Category, Budget } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -27,35 +27,34 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { CategoryForm } from './category-form'
 
 interface CategoryWithBudget extends Category {
-  budget?: Budget | null
+  budget?: (Budget & { _inherited?: boolean }) | null
 }
 
 interface CategoriesListProps {
   categories: CategoryWithBudget[]
+  selectedMonth: string
 }
 
-export function CategoriesList({ categories }: CategoriesListProps) {
+export function CategoriesList({ categories, selectedMonth }: CategoriesListProps) {
+  const router = useRouter()
   const [formOpen, setFormOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [editingCategory, setEditingCategory] = useState<CategoryWithBudget | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false)
-  const [budgetCategory, setBudgetCategory] = useState<CategoryWithBudget | null>(null)
-  const [budgetAmount, setBudgetAmount] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const incomeCategories = categories.filter((c) => c.type === 'income')
   const expenseCategories = categories.filter((c) => c.type === 'expense')
+
+  const monthDate = parse(selectedMonth, 'yyyy-MM', new Date())
+  const monthLabel = format(monthDate, 'MMMM yyyy')
+
+  function navigateMonth(direction: 'prev' | 'next') {
+    const newDate = direction === 'prev' ? subMonths(monthDate, 1) : addMonths(monthDate, 1)
+    const newMonth = format(newDate, 'yyyy-MM')
+    router.push(`/categories?month=${newMonth}`)
+  }
 
   async function handleDelete() {
     if (!deleteId) return
@@ -71,7 +70,7 @@ export function CategoriesList({ categories }: CategoriesListProps) {
     setDeleteId(null)
   }
 
-  function handleEdit(category: Category) {
+  function handleEdit(category: CategoryWithBudget) {
     setEditingCategory(category)
     setFormOpen(true)
   }
@@ -81,66 +80,6 @@ export function CategoriesList({ categories }: CategoriesListProps) {
     if (!open) {
       setEditingCategory(null)
     }
-  }
-
-  function openBudgetDialog(category: CategoryWithBudget) {
-    setBudgetCategory(category)
-    setBudgetAmount(category.budget?.amount?.toString() || '')
-    setBudgetDialogOpen(true)
-  }
-
-  async function handleBudgetSave() {
-    if (!budgetCategory) return
-
-    setIsSubmitting(true)
-    const amount = parseFloat(budgetAmount)
-
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Please enter a valid amount')
-      setIsSubmitting(false)
-      return
-    }
-
-    let result
-    if (budgetCategory.budget) {
-      result = await updateBudget(budgetCategory.budget.id, {
-        amount,
-        period: 'monthly',
-        is_active: true,
-      })
-    } else {
-      result = await createBudget({
-        category_id: budgetCategory.id,
-        amount,
-        period: 'monthly',
-        is_active: true,
-      })
-    }
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Budget saved')
-      setBudgetDialogOpen(false)
-    }
-
-    setIsSubmitting(false)
-  }
-
-  async function handleBudgetRemove() {
-    if (!budgetCategory?.budget) return
-
-    setIsSubmitting(true)
-    const result = await deleteBudget(budgetCategory.budget.id)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success('Budget removed')
-      setBudgetDialogOpen(false)
-    }
-
-    setIsSubmitting(false)
   }
 
   const CategoryItem = ({ category }: { category: CategoryWithBudget }) => (
@@ -162,6 +101,9 @@ export function CategoriesList({ categories }: CategoriesListProps) {
               {category.budget ? (
                 <span className="text-primary font-medium">
                   Budget: {formatCurrency(category.budget.amount)}/mo
+                  {category.budget._inherited && (
+                    <span className="text-muted-foreground font-normal"> (prev month)</span>
+                  )}
                 </span>
               ) : (
                 <span>No budget set</span>
@@ -171,17 +113,6 @@ export function CategoriesList({ categories }: CategoriesListProps) {
         </div>
       </div>
       <div className="flex items-center gap-1">
-        {category.type === 'expense' && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => openBudgetDialog(category)}
-            title="Set Budget"
-            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <DollarSign className="h-4 w-4" />
-          </Button>
-        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -218,11 +149,37 @@ export function CategoriesList({ categories }: CategoriesListProps) {
           <p className="text-muted-foreground text-sm mt-1">Manage your income and expense categories</p>
         </div>
         <Button
-          onClick={() => setFormOpen(true)}
+          onClick={() => {
+            setEditingCategory(null)
+            setFormOpen(true)
+          }}
           className="rounded-full h-10 px-5 font-semibold ig-gradient border-0 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300"
         >
           <Plus className="mr-2 h-4 w-4" strokeWidth={2.5} />
           Add
+        </Button>
+      </div>
+
+      {/* Month Selector */}
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigateMonth('prev')}
+          className="h-9 w-9 rounded-full"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <span className="text-sm font-semibold min-w-[160px] text-center">
+          {monthLabel}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigateMonth('next')}
+          className="h-9 w-9 rounded-full"
+        >
+          <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
 
@@ -296,72 +253,8 @@ export function CategoriesList({ categories }: CategoriesListProps) {
         category={editingCategory}
         open={formOpen}
         onOpenChange={handleFormClose}
+        selectedMonth={selectedMonth}
       />
-
-      {/* Budget Dialog */}
-      <Dialog open={budgetDialogOpen} onOpenChange={setBudgetDialogOpen}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {budgetCategory?.budget ? 'Edit Budget' : 'Set Budget'}
-            </DialogTitle>
-            <DialogDescription>
-              Set a monthly budget for {budgetCategory?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Monthly Budget Amount</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  $
-                </span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={budgetAmount}
-                  onChange={(e) => setBudgetAmount(e.target.value)}
-                  className="pl-8 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="flex justify-between gap-2">
-            <div>
-              {budgetCategory?.budget && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={handleBudgetRemove}
-                  disabled={isSubmitting}
-                  className="rounded-full"
-                >
-                  Remove Budget
-                </Button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setBudgetDialogOpen(false)}
-                className="rounded-full"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleBudgetSave}
-                disabled={isSubmitting}
-                className="rounded-full ig-gradient border-0"
-              >
-                Save
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="rounded-2xl">

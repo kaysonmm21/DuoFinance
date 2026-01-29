@@ -34,6 +34,7 @@ export const budgetSchema = z.object({
   category_id: z.string().uuid('Invalid category'),
   amount: z.number().positive('Amount must be positive'),
   period: z.enum(['monthly', 'weekly', 'yearly']),
+  budget_month: z.string().regex(/^\d{4}-\d{2}$/, 'Invalid month format (YYYY-MM)'),
   is_active: z.boolean(),
 })
 

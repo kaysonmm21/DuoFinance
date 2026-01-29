@@ -77,6 +77,7 @@ export interface Database {
           category_id: string
           amount: number
           period: BudgetPeriod
+          budget_month: string
           is_active: boolean
           created_at: string
           updated_at: string
@@ -87,6 +88,7 @@ export interface Database {
           category_id: string
           amount: number
           period?: BudgetPeriod
+          budget_month: string
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -97,6 +99,7 @@ export interface Database {
           category_id?: string
           amount?: number
           period?: BudgetPeriod
+          budget_month?: string
           is_active?: boolean
           created_at?: string
           updated_at?: string

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { format } from 'date-fns'
 import type { CategoryInput } from '@/lib/validations'
 import type { Category, CategoryWithBudget } from '@/types'
 
@@ -21,26 +22,67 @@ export async function getCategories(): Promise<Category[]> {
   return data || []
 }
 
-export async function getCategoriesWithBudgets(): Promise<CategoryWithBudget[]> {
+export async function getCategoriesWithBudgets(month?: string): Promise<CategoryWithBudget[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return []
 
-  const { data, error } = await supabase
+  const selectedMonth = month || format(new Date(), 'yyyy-MM')
+
+  // Get all categories
+  const { data: categories, error: catError } = await supabase
     .from('categories')
-    .select(`
-      *,
-      budget:budgets(*)
-    `)
+    .select('*')
     .eq('user_id', user.id)
     .order('name')
 
-  if (error) throw error
+  if (catError) throw catError
+  if (!categories) return []
 
-  return (data || []).map((category: Category & { budget: any[] }) => ({
+  // Get budgets for the selected month
+  const { data: monthBudgets, error: budgetError } = await supabase
+    .from('budgets')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('budget_month', selectedMonth)
+
+  if (budgetError) throw budgetError
+
+  // Build a map of category_id -> budget for this month
+  const budgetMap = new Map<string, any>()
+  for (const b of (monthBudgets || [])) {
+    budgetMap.set(b.category_id, b)
+  }
+
+  // For expense categories without a budget this month, find the most recent previous budget
+  const expenseWithoutBudget = categories
+    .filter(c => c.type === 'expense' && !budgetMap.has(c.id))
+    .map(c => c.id)
+
+  if (expenseWithoutBudget.length > 0) {
+    const { data: fallbackBudgets, error: fbError } = await supabase
+      .from('budgets')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('category_id', expenseWithoutBudget)
+      .lt('budget_month', selectedMonth)
+      .order('budget_month', { ascending: false })
+
+    if (!fbError && fallbackBudgets) {
+      // Take the most recent budget per category
+      for (const b of fallbackBudgets) {
+        if (!budgetMap.has(b.category_id)) {
+          // Mark as inherited (no id so we create a new one when saving)
+          budgetMap.set(b.category_id, { ...b, _inherited: true })
+        }
+      }
+    }
+  }
+
+  return categories.map(category => ({
     ...category,
-    budget: category.budget?.[0] || null,
+    budget: budgetMap.get(category.id) || null,
   }))
 }
 
