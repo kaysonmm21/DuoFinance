@@ -30,22 +30,32 @@ export async function signUp(formData: FormData) {
 }
 
 export async function signIn(formData: FormData) {
-  const supabase = await createClient()
+  let shouldRedirect = false
 
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  try {
+    const supabase = await createClient()
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
-  if (error) {
-    return { error: error.message }
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    revalidatePath('/', 'layout')
+    shouldRedirect = true
+  } catch (err) {
+    return { error: 'An unexpected error occurred. Please try again.' }
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  if (shouldRedirect) {
+    redirect('/dashboard')
+  }
 }
 
 export async function signOut() {
