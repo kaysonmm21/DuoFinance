@@ -49,8 +49,9 @@ export async function signIn(formData: FormData) {
 
     revalidatePath('/', 'layout')
     shouldRedirect = true
-  } catch (err) {
-    return { error: 'An unexpected error occurred. Please try again.' }
+  } catch (err: any) {
+    const msg = err?.message || String(err)
+    return { error: `Auth error: ${msg}` }
   }
 
   if (shouldRedirect) {
