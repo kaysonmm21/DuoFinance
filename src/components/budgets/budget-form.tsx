@@ -52,7 +52,7 @@ export function BudgetForm({ budget, categories, open, onOpenChange }: BudgetFor
     resolver: zodResolver(budgetSchema) as any,
     defaultValues: {
       category_id: budget?.category_id || '',
-      amount: budget?.amount || 0,
+      amount: budget?.amount ?? ('' as any),
       period: budget?.period || 'monthly',
       budget_month: budget?.budget_month || format(new Date(), 'yyyy-MM'),
       is_active: budget?.is_active ?? true,

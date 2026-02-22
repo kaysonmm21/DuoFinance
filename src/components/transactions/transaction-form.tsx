@@ -55,7 +55,7 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
     resolver: zodResolver(transactionSchema) as any,
     defaultValues: {
       category_id: transaction?.category_id || undefined,
-      amount: transaction?.amount || 0,
+      amount: transaction?.amount ?? ('' as any),
       type: transaction?.type || 'expense',
       description: transaction?.description || '',
       date: transaction?.date || format(new Date(), 'yyyy-MM-dd'),
@@ -91,7 +91,7 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
       onOpenChange(false)
       form.reset({
         category_id: undefined,
-        amount: 0,
+        amount: '' as any,
         type: 'expense',
         description: '',
         date: format(new Date(), 'yyyy-MM-dd'),
