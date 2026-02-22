@@ -171,7 +171,8 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
                         placeholder="0.00"
                         className="pl-8 h-11 rounded-xl bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-primary/20"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
                       />
                     </div>
                   </FormControl>
@@ -185,7 +186,7 @@ export function TransactionForm({ transaction, categories, open, onOpenChange }:
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium">Description</FormLabel>
+                  <FormLabel className="text-sm font-medium">Description (optional)</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="What was this for?"

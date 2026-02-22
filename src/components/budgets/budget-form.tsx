@@ -136,7 +136,8 @@ export function BudgetForm({ budget, categories, open, onOpenChange }: BudgetFor
                       min="0"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))}
                     />
                   </FormControl>
                   <FormMessage />

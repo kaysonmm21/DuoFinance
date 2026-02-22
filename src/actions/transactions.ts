@@ -80,7 +80,7 @@ export async function createTransaction(input: TransactionInput) {
       category_id: input.category_id || null,
       amount: input.amount,
       type: input.type,
-      description: input.description,
+      description: input.description || '',
       date: input.date,
       notes: input.notes || null,
     })

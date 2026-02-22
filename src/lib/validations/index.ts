@@ -42,7 +42,7 @@ export const transactionSchema = z.object({
   category_id: z.string().uuid('Invalid category').optional().nullable(),
   amount: z.number().positive('Amount must be positive'),
   type: z.enum(['income', 'expense']),
-  description: z.string().min(1, 'Description is required').max(100, 'Description must be less than 100 characters'),
+  description: z.string().max(100, 'Description must be less than 100 characters').optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
   notes: z.string().max(500, 'Notes must be less than 500 characters').optional().nullable(),
 })
