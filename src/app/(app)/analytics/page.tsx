@@ -1,11 +1,12 @@
-import { getSpendingByCategory, getMonthlySpendingHistory } from '@/actions/transactions'
+import { getSpendingByCategory, getMonthlySpendingHistory, getMonthlyIncomeExpenseHistory } from '@/actions/transactions'
 import { getCategories } from '@/actions/categories'
 import { AnalyticsContent } from '@/components/analytics/analytics-content'
 
 export default async function AnalyticsPage() {
-  const [spendingByCategory, monthlyHistory, categories] = await Promise.all([
+  const [spendingByCategory, monthlyHistory, incomeExpenseHistory, categories] = await Promise.all([
     getSpendingByCategory(),
     getMonthlySpendingHistory(6),
+    getMonthlyIncomeExpenseHistory(6),
     getCategories(),
   ])
 
@@ -16,6 +17,7 @@ export default async function AnalyticsPage() {
     <AnalyticsContent
       spendingByCategory={spendingByCategory}
       monthlyHistory={monthlyHistory}
+      incomeExpenseHistory={incomeExpenseHistory}
       categories={expenseCategories}
     />
   )

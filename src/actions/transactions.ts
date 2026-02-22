@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { TransactionInput } from '@/lib/validations'
 import type { Transaction, TransactionWithCategory } from '@/types'
-import { format, startOfMonth, endOfMonth } from 'date-fns'
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
 export async function getTransactions(options?: {
   startDate?: Date
@@ -275,4 +275,42 @@ export async function getMonthlySpendingHistory(months: number = 6, categoryId?:
   }
 
   return result
+}
+
+export async function getMonthlyIncomeExpenseHistory(months: number = 6) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return []
+
+  const now = new Date()
+  const startDate = format(startOfMonth(subMonths(now, months - 1)), 'yyyy-MM-dd')
+  const endDate = format(endOfMonth(now), 'yyyy-MM-dd')
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('amount, type, date')
+    .eq('user_id', user.id)
+    .gte('date', startDate)
+    .lte('date', endDate)
+
+  if (error) throw error
+
+  // Build month buckets
+  const buckets = new Map<string, { month: string; income: number; expense: number }>()
+  for (let i = months - 1; i >= 0; i--) {
+    const date = subMonths(now, i)
+    const key = format(date, 'yyyy-MM')
+    buckets.set(key, { month: format(date, 'MMM yy'), income: 0, expense: 0 })
+  }
+
+  for (const tx of data || []) {
+    const key = tx.date.slice(0, 7)
+    const bucket = buckets.get(key)
+    if (!bucket) continue
+    if (tx.type === 'income') bucket.income += Number(tx.amount)
+    else bucket.expense += Number(tx.amount)
+  }
+
+  return Array.from(buckets.values())
 }

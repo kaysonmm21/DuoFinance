@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { PieChartIcon, BarChart3 } from 'lucide-react'
+import { PieChartIcon, BarChart3, TrendingUp } from 'lucide-react'
 
 import { getMonthlySpendingHistory } from '@/actions/transactions'
 import { formatCurrency } from '@/lib/utils'
@@ -39,15 +39,23 @@ interface MonthlyData {
   total: number
 }
 
+interface MonthlyIncomeExpenseData {
+  month: string
+  income: number
+  expense: number
+}
+
 interface AnalyticsContentProps {
   spendingByCategory: SpendingData[]
   monthlyHistory: MonthlyData[]
+  incomeExpenseHistory: MonthlyIncomeExpenseData[]
   categories: Category[]
 }
 
 export function AnalyticsContent({
   spendingByCategory,
   monthlyHistory: initialHistory,
+  incomeExpenseHistory,
   categories,
 }: AnalyticsContentProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -91,6 +99,23 @@ export function AnalyticsContent({
         <div className="bg-popover text-popover-foreground rounded-xl border p-3 shadow-lg">
           <p className="font-medium text-sm">{label}</p>
           <p className="text-sm">{formatCurrency(payload[0].value)}</p>
+        </div>
+      )
+    }
+    return null
+  }
+
+  // Custom tooltip for income vs expense chart
+  const CustomIncomeExpenseTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-popover text-popover-foreground rounded-xl border p-3 shadow-lg space-y-1">
+          <p className="font-medium text-sm">{label}</p>
+          {payload.map((entry: any) => (
+            <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
+              {entry.name === 'income' ? 'Income' : 'Expenses'}: {formatCurrency(entry.value)}
+            </p>
+          ))}
         </div>
       )
     }
@@ -261,6 +286,68 @@ export function AnalyticsContent({
           </CardContent>
         </Card>
       </div>
+
+      {/* Income vs Expenses by Month */}
+      <Card className="border shadow-sm rounded-2xl ig-card-hover">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-primary" strokeWidth={2} />
+            </div>
+            <div>
+              <CardTitle className="text-base">Income vs Expenses</CardTitle>
+              <CardDescription className="text-xs">Monthly comparison over the last 6 months</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[280px]">
+            {incomeExpenseHistory.every(m => m.income === 0 && m.expense === 0) ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
+                    <TrendingUp className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground text-sm">No data for this period</p>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={incomeExpenseHistory} barCategoryGap="25%">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/50" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    className="text-muted-foreground"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `$${value}`}
+                    className="text-muted-foreground"
+                    width={50}
+                  />
+                  <Tooltip content={<CustomIncomeExpenseTooltip />} />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value) => (
+                      <span className="text-xs text-foreground capitalize">
+                        {value === 'income' ? 'Income' : 'Expenses'}
+                      </span>
+                    )}
+                  />
+                  <Bar dataKey="income" fill="#22c55e" radius={[5, 5, 0, 0]} />
+                  <Bar dataKey="expense" fill="#f43f5e" radius={[5, 5, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Category Breakdown Table */}
       <Card className="border shadow-sm rounded-2xl ig-card-hover">
