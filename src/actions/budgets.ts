@@ -111,6 +111,40 @@ export async function getBudgetsWithSpending(): Promise<BudgetWithCategory[]> {
   return budgetsWithSpending
 }
 
+export async function setMonthlyBudget(categoryId: string, amount: number, budgetMonth: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  // Unique constraint is (user_id, category_id) — one budget per category
+  const { data: existing } = await supabase
+    .from('budgets')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('category_id', categoryId)
+    .maybeSingle()
+
+  if (existing) {
+    const { error } = await supabase
+      .from('budgets')
+      .update({ amount, period: 'monthly', is_active: true, budget_month: budgetMonth })
+      .eq('id', existing.id)
+      .eq('user_id', user.id)
+    if (error) return { error: error.message }
+  } else {
+    const { error } = await supabase
+      .from('budgets')
+      .insert({ user_id: user.id, category_id: categoryId, amount, period: 'monthly', budget_month: budgetMonth, is_active: true })
+    if (error) return { error: error.message }
+  }
+
+  revalidatePath('/budgets')
+  revalidatePath('/dashboard')
+  revalidatePath('/categories')
+  return { success: true }
+}
+
 export async function createBudget(input: BudgetInput) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

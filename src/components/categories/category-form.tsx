@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, TrendingUp, TrendingDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { createCategory, updateCategory } from '@/actions/categories'
-import { createBudget, updateBudget, deleteBudget } from '@/actions/budgets'
+import { setMonthlyBudget, deleteBudget } from '@/actions/budgets'
 import { categorySchema, type CategoryInput } from '@/lib/validations'
 import type { Category, Budget } from '@/types'
 import { cn } from '@/lib/utils'
@@ -65,6 +66,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ category, open, onOpenChange, selectedMonth }: CategoryFormProps) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [budgetAmount, setBudgetAmount] = useState('')
   const isEditing = !!category
@@ -122,22 +124,11 @@ export function CategoryForm({ category, open, onOpenChange, selectedMonth }: Ca
 
       if (categoryId) {
         if (!isNaN(amount) && amount > 0) {
-          // Has a real (non-inherited) budget for this month — update it
-          if (category?.budget && !category.budget._inherited) {
-            await updateBudget(category.budget.id, {
-              amount,
-              period: 'monthly',
-              is_active: true,
-            })
-          } else {
-            // Create new budget for this month (or inherited → create fresh)
-            await createBudget({
-              category_id: categoryId,
-              amount,
-              period: 'monthly',
-              budget_month: selectedMonth,
-              is_active: true,
-            })
+          const budgetResult = await setMonthlyBudget(categoryId, amount, selectedMonth)
+          if (budgetResult.error) {
+            toast.error(`Budget not saved: ${budgetResult.error}`)
+            setIsLoading(false)
+            return
           }
         } else if (category?.budget && !category.budget._inherited) {
           // Amount cleared — remove the budget for this month
@@ -150,6 +141,7 @@ export function CategoryForm({ category, open, onOpenChange, selectedMonth }: Ca
     onOpenChange(false)
     form.reset()
     setBudgetAmount('')
+    router.refresh()
     setIsLoading(false)
   }
 
