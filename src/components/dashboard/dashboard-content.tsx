@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { format, startOfMonth } from 'date-fns'
-import { Target, AlertTriangle, MoreHorizontal, Pencil, Trash2, TrendingUp } from 'lucide-react'
+import { Target, AlertTriangle, MoreHorizontal, Pencil, Trash2, TrendingUp, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { formatCurrency, calculatePercentage } from '@/lib/utils'
@@ -56,12 +56,14 @@ export function DashboardContent({
   const [totalSpent, setTotalSpent] = useState(initialTotalSpent)
   const [isPending, startTransition] = useTransition()
 
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   function handleMonthChange(date: Date) {
     setSelectedMonth(date)
+    setExpandedCategoryId(null)
     startTransition(async () => {
       const [summary, newTransactions, newBudgets] = await Promise.all([
         getMonthlySummary(date),
@@ -195,41 +197,81 @@ export function DashboardContent({
                 const isOverBudget = spent > budget.amount
                 const isNearLimit = percentage >= 80 && !isOverBudget
 
+                const isExpanded = expandedCategoryId === budget.category_id
+                const categoryTransactions = transactions.filter(
+                  (tx) => tx.category_id === budget.category_id
+                )
+
                 return (
                   <div key={budget.id} className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: budget.category.color + '15' }}
-                        >
+                    <button
+                      className="w-full text-left cursor-pointer rounded-xl p-2 -mx-2 hover:bg-muted/50 transition-colors"
+                      onClick={() => setExpandedCategoryId(isExpanded ? null : budget.category_id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
                           <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: budget.category.color }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: budget.category.color + '15' }}
+                          >
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: budget.category.color }}
+                            />
+                          </div>
+                          <div>
+                            <span className="font-medium text-sm">{budget.category.name}</span>
+                            {isOverBudget && (
+                              <AlertTriangle className="inline-block ml-1.5 h-3.5 w-3.5 text-red-500" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground tabular-nums">
+                            {formatCurrency(spent)} / {formatCurrency(budget.amount)}
+                          </span>
+                          <ChevronDown
+                            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
                           />
                         </div>
-                        <div>
-                          <span className="font-medium text-sm">{budget.category.name}</span>
-                          {isOverBudget && (
-                            <AlertTriangle className="inline-block ml-1.5 h-3.5 w-3.5 text-red-500" />
-                          )}
-                        </div>
                       </div>
-                      <span className="text-sm text-muted-foreground tabular-nums">
-                        {formatCurrency(spent)} / {formatCurrency(budget.amount)}
-                      </span>
-                    </div>
-                    <Progress
-                      value={Math.min(percentage, 100)}
-                      className="h-2"
-                      style={{
-                        ['--progress-color' as string]: isOverBudget
-                          ? 'oklch(0.62 0.24 25)'
-                          : isNearLimit
-                          ? 'oklch(0.78 0.16 85)'
-                          : budget.category.color,
-                      }}
-                    />
+                      <div className="mt-2.5">
+                        <Progress
+                          value={Math.min(percentage, 100)}
+                          className="h-2"
+                          style={{
+                            ['--progress-color' as string]: isOverBudget
+                              ? 'oklch(0.62 0.24 25)'
+                              : isNearLimit
+                              ? 'oklch(0.78 0.16 85)'
+                              : budget.category.color,
+                          }}
+                        />
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="pl-2 space-y-1 pb-1">
+                        {categoryTransactions.length === 0 ? (
+                          <p className="text-xs text-muted-foreground py-2 pl-1">No transactions this period.</p>
+                        ) : (
+                          categoryTransactions.map((tx) => (
+                            <div
+                              key={tx.id}
+                              className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/40 transition-colors"
+                            >
+                              <div>
+                                <p className="text-sm font-medium">{tx.description}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(tx.date), 'MMM d')}</p>
+                              </div>
+                              <span className="text-sm font-semibold tabular-nums text-red-500">
+                                -{formatCurrency(tx.amount)}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })}
