@@ -61,7 +61,7 @@ function getDateRangeForPeriod(period: 'monthly' | 'weekly' | 'yearly', date: Da
   }
 }
 
-export async function getBudgetsWithSpending(): Promise<BudgetWithCategory[]> {
+export async function getBudgetsWithSpending(date?: Date): Promise<BudgetWithCategory[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -83,7 +83,7 @@ export async function getBudgetsWithSpending(): Promise<BudgetWithCategory[]> {
   // Get spending for each budget based on its period
   const budgetsWithSpending = await Promise.all(
     budgets.map(async (budget: BudgetWithCategory) => {
-      const { start, end } = getDateRangeForPeriod(budget.period)
+      const { start, end } = getDateRangeForPeriod(budget.period, date)
 
       const { data: transactions, error: txError } = await supabase
         .from('transactions')

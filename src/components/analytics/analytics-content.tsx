@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import {
   PieChart,
   Pie,
@@ -14,12 +14,14 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
+import { format, startOfMonth } from 'date-fns'
 import { PieChartIcon, BarChart3, TrendingUp } from 'lucide-react'
 
-import { getMonthlySpendingHistory } from '@/actions/transactions'
+import { getMonthlySpendingHistory, getSpendingByCategory } from '@/actions/transactions'
 import { formatCurrency } from '@/lib/utils'
 import type { Category } from '@/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { MonthPicker } from '@/components/ui/month-picker'
 import {
   Select,
   SelectContent,
@@ -53,14 +55,17 @@ interface AnalyticsContentProps {
 }
 
 export function AnalyticsContent({
-  spendingByCategory,
+  spendingByCategory: initialSpending,
   monthlyHistory: initialHistory,
   incomeExpenseHistory,
   categories,
 }: AnalyticsContentProps) {
+  const [selectedMonth, setSelectedMonth] = useState(() => startOfMonth(new Date()))
+  const [spendingByCategory, setSpendingByCategory] = useState(initialSpending)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [monthlyHistory, setMonthlyHistory] = useState(initialHistory)
   const [isLoading, setIsLoading] = useState(false)
+  const [isMonthPending, startMonthTransition] = useTransition()
 
   useEffect(() => {
     async function fetchData() {
@@ -73,6 +78,14 @@ export function AnalyticsContent({
 
     fetchData()
   }, [selectedCategory])
+
+  function handleMonthChange(date: Date) {
+    setSelectedMonth(date)
+    startMonthTransition(async () => {
+      const data = await getSpendingByCategory(date)
+      setSpendingByCategory(data)
+    })
+  }
 
   const totalSpending = spendingByCategory.reduce((sum, cat) => sum + cat.total, 0)
 
@@ -125,11 +138,16 @@ export function AnalyticsContent({
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Visualize your spending patterns and trends
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            Visualize your spending patterns and trends
+          </p>
+        </div>
+        <div className={isMonthPending ? 'opacity-50 pointer-events-none' : ''}>
+          <MonthPicker value={selectedMonth} onChange={handleMonthChange} />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -142,7 +160,7 @@ export function AnalyticsContent({
               </div>
               <div>
                 <CardTitle className="text-base">Spending by Category</CardTitle>
-                <CardDescription className="text-xs">This month&apos;s breakdown</CardDescription>
+                <CardDescription className="text-xs">{format(selectedMonth, 'MMMM yyyy')} breakdown</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -153,7 +171,7 @@ export function AnalyticsContent({
                   <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
                     <PieChartIcon className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <p className="text-muted-foreground text-sm">No spending data this month</p>
+                  <p className="text-muted-foreground text-sm">No spending in {format(selectedMonth, 'MMMM yyyy')}</p>
                 </div>
               </div>
             ) : (
@@ -353,12 +371,12 @@ export function AnalyticsContent({
       <Card className="border shadow-sm rounded-2xl ig-card-hover">
         <CardHeader className="pb-4">
           <CardTitle className="text-base">Category Breakdown</CardTitle>
-          <CardDescription className="text-sm">Detailed spending by category this month</CardDescription>
+          <CardDescription className="text-sm">Detailed spending by category in {format(selectedMonth, 'MMMM yyyy')}</CardDescription>
         </CardHeader>
         <CardContent>
           {spendingByCategory.length === 0 ? (
             <p className="text-muted-foreground text-center py-8 text-sm">
-              No spending data this month
+              No spending in {format(selectedMonth, 'MMMM yyyy')}
             </p>
           ) : (
             <div className="space-y-2">

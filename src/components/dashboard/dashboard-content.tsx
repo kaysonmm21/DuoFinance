@@ -1,16 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import { format } from 'date-fns'
-import { ArrowUpRight, Target, AlertTriangle, MoreHorizontal, Pencil, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { format, startOfMonth } from 'date-fns'
+import { Target, AlertTriangle, MoreHorizontal, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { formatCurrency, calculatePercentage } from '@/lib/utils'
-import { deleteTransaction } from '@/actions/transactions'
+import { deleteTransaction, getMonthlySummary, getMonthlyTransactions } from '@/actions/transactions'
+import { getBudgetsWithSpending } from '@/actions/budgets'
 import type { BudgetWithCategory, TransactionWithCategory, Category } from '@/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { TransactionForm } from '@/components/transactions/transaction-form'
+import { MonthPicker } from '@/components/ui/month-picker'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,16 +41,40 @@ interface DashboardContentProps {
 }
 
 export function DashboardContent({
-  income,
-  totalBudget,
-  totalSpent,
-  budgets,
-  transactions,
+  income: initialIncome,
+  totalBudget: initialTotalBudget,
+  totalSpent: initialTotalSpent,
+  budgets: initialBudgets,
+  transactions: initialTransactions,
   categories,
 }: DashboardContentProps) {
+  const [selectedMonth, setSelectedMonth] = useState(() => startOfMonth(new Date()))
+  const [income, setIncome] = useState(initialIncome)
+  const [budgets, setBudgets] = useState(initialBudgets)
+  const [transactions, setTransactions] = useState(initialTransactions)
+  const [totalBudget, setTotalBudget] = useState(initialTotalBudget)
+  const [totalSpent, setTotalSpent] = useState(initialTotalSpent)
+  const [isPending, startTransition] = useTransition()
+
   const [formOpen, setFormOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  function handleMonthChange(date: Date) {
+    setSelectedMonth(date)
+    startTransition(async () => {
+      const [summary, newTransactions, newBudgets] = await Promise.all([
+        getMonthlySummary(date),
+        getMonthlyTransactions(date),
+        getBudgetsWithSpending(date),
+      ])
+      setIncome(summary.income)
+      setTransactions(newTransactions)
+      setBudgets(newBudgets)
+      setTotalBudget(newBudgets.reduce((sum, b) => sum + Number(b.amount), 0))
+      setTotalSpent(newBudgets.reduce((sum, b) => sum + (b.spent || 0), 0))
+    })
+  }
 
   const budgetPercentage = totalBudget > 0 ? calculatePercentage(totalSpent, totalBudget) : 0
   const remaining = totalBudget - totalSpent
@@ -82,11 +108,16 @@ export function DashboardContent({
   return (
     <div className="space-y-6 stagger-children max-w-4xl mx-auto">
       {/* Greeting Header */}
-      <div className="pt-2">
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          {format(new Date(), 'MMMM yyyy')} Overview
-        </p>
+      <div className="pt-2 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            {format(selectedMonth, 'MMMM yyyy')} Overview
+          </p>
+        </div>
+        <div className={isPending ? 'opacity-50 pointer-events-none' : ''}>
+          <MonthPicker value={selectedMonth} onChange={handleMonthChange} />
+        </div>
       </div>
 
       {/* Summary Cards - Instagram Story Style */}
@@ -101,7 +132,7 @@ export function DashboardContent({
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                     +{formatCurrency(income)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">This month</p>
+                  <p className="text-xs text-muted-foreground mt-1">{format(selectedMonth, 'MMM yyyy')}</p>
                 </div>
               </div>
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
@@ -211,12 +242,12 @@ export function DashboardContent({
       <Card className="border shadow-sm ig-card-hover">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
-          <CardDescription className="text-sm">All transactions this month</CardDescription>
+          <CardDescription className="text-sm">All transactions in {format(selectedMonth, 'MMMM yyyy')}</CardDescription>
         </CardHeader>
         <CardContent>
           {transactions.length === 0 ? (
             <p className="text-muted-foreground text-center py-8 text-sm">
-              No transactions this month. Click the + button to add one.
+              No transactions in {format(selectedMonth, 'MMMM yyyy')}.
             </p>
           ) : (
             <div className="space-y-1">
